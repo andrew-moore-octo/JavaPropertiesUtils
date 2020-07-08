@@ -1,0 +1,8 @@
+# Test file
+KEY1 = value1
+
+! Another comment
+key.2: The new value for key 2
+key\ 3 : third value
+key\=4=     The new value for key 4
+key\\\ \:\==fifth value
