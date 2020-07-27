@@ -1,4 +1,5 @@
-﻿using Superpower;
+﻿using JavaPropertiesUtils.Utils;
+using Superpower;
 using Superpower.Model;
 using Superpower.Parsers;
 
@@ -6,9 +7,15 @@ namespace JavaPropertiesUtils
 {
     public class PropertiesFileParser
     {
+        private static readonly TokenListParser<TokenType, Token<TokenType>> KeyComponent = Tokens.In(
+            TokenType.KeyChars,
+            TokenType.KeyEscapeSequence,
+            TokenType.KeyPhysicalNewLine
+        );
+        
         public static readonly TokenListParser<TokenType, Key> KeyParser = 
-            from token in Token.EqualTo(TokenType.Key)
-            select new Key(token);
+            from tokens in KeyComponent.Many()
+            select new Key(tokens);
         
         public static readonly TokenListParser<TokenType, Separator> SeparatorParser = 
             from token in Token.EqualTo(TokenType.Separator)
@@ -32,9 +39,14 @@ namespace JavaPropertiesUtils
             from token in Token.EqualTo(TokenType.NewLine)
             select (ITopLevelExpression)new NewLine(token);
 
+        public static readonly TokenListParser<TokenType, ITopLevelExpression> WhiteSpaceParser = 
+            from token in Token.EqualTo(TokenType.Whitespace)
+            select (ITopLevelExpression)new WhiteSpace(token);
+
         public static readonly TokenListParser<TokenType, ITopLevelExpression> TopLevelExpressions = KeyValuePairParser
             .Or(CommentParser)
-            .Or(NewLineParser);
+            .Or(NewLineParser)
+            .Or(WhiteSpaceParser);
 
         public static readonly TokenListParser<TokenType, PropertiesDocument> DocumentParser = 
             from expressions in TopLevelExpressions.Many()

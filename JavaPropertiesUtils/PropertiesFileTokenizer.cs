@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Superpower;
 using Superpower.Model;
-using Superpower.Parsers;
+using JavaPropertiesUtils.Tokenization;
 
 namespace JavaPropertiesUtils
 {
@@ -11,135 +11,63 @@ namespace JavaPropertiesUtils
         // TODO: handle multiline values
         // TODO: handle leading whitespace
         // TODO: handle whitespace (but not empty) lines
-        
-        private static readonly TextParser<TextSpan> UntilNewLineParser = Span.WithoutAny(c => c == '\r' || c == '\n');
-        private static readonly TextParser<char> ExclamationParser = Character.EqualTo('!');
-        private static readonly TextParser<char> HashParser = Character.EqualTo('#');
-        
-        private static readonly TextParser<TokenType> CommentParser =
-            from delimiter in ExclamationParser.Or(HashParser)
-            from text in UntilNewLineParser
-            select TokenType.Comment;
 
-        private static readonly TextParser<TokenType> NewLineParser = Span
-            .EqualTo("\n")
-            .Or(Span.EqualTo("\r\n"))
-            .Value(TokenType.NewLine);
+        private static readonly TextParser<TokenType> KeyOrWhitespaceOrNewLinesOrCommentParser = Comments.Parser
+            .Or(Whitespace.Parser)
+            .Or(NewLines.Parser)
+            .Or(Keys.Parser);
 
-        private static readonly TextParser<TextSpan> EscapedSpaceParser = Span.EqualTo("\\ ");
-        private static readonly TextParser<TextSpan> EscapedColonParser = Span.EqualTo("\\:");
-        private static readonly TextParser<TextSpan> EscapedEqualsParser = Span.EqualTo("\\=");
-        private static readonly TextParser<TextSpan> EscapedBackSlashParser = Span.EqualTo("\\");
+        private static readonly TextParser<TokenType> KeyOrSeparatorOrNewLineParser = Keys.Parser
+            .Or(Separators.Parser)
+            .Or(NewLines.Parser);
 
-        private static readonly Func<char, bool> IsValidKeyCharacter = c =>
-            c != ' ' && c != ':' && c != '=' && c != '\\' && !char.IsWhiteSpace(c);
+        private static readonly TextParser<TokenType> ValueOrNewLineParser = Values.Parser
+            .Or(NewLines.Parser);
 
-        private static readonly TextParser<TextSpan> OtherValidKeyCharacters = Span.WithAll(IsValidKeyCharacter);
-
-        private static readonly TextParser<TokenType> KeyParser = EscapedEqualsParser.Try()
-            .Or(EscapedColonParser.Try())
-            .Or(EscapedSpaceParser.Try())
-            .Or(EscapedBackSlashParser.Try())
-            .Or(OtherValidKeyCharacters)
-            .AtLeastOnce()
-            .Value(TokenType.Key);
-            
-        private static readonly TextParser<char> SpaceParser = Character.EqualTo(' ');
-        private static readonly TextParser<char> ColonParser = Character.EqualTo(':');
-        private static readonly TextParser<char> EqualsParser = Character.EqualTo('=');
-
-        private static readonly TextParser<TokenType> SeparatorParser =
-            from leadingWhitespace in SpaceParser.Many()
-            from separator in ColonParser.Or(EqualsParser)
-            from trailingWhitespace in SpaceParser.Many()
-            select TokenType.Separator;
-
-        // TODO: handle multiline values.
-        private static readonly TextParser<TokenType> ValueParser = UntilNewLineParser.Value(TokenType.Value);
-            
         protected override IEnumerable<Result<TokenType>> Tokenize(TextSpan remainder, TokenizationState<TokenType> state)
         {
             // Parsing of the properties file syntax has to be stateful: any string can appear inside the value, so 
             // without knowing what the last token was, you don't know how to parse the remaining text. Hence why
             // we're overriding this overload that takes the state.
             
-            bool TryParser(TextParser<TokenType> parser, out Result<TokenType> result)
-            {
-                result = parser(remainder);
-                if (result.HasValue)
-                {
-                    remainder = result.Remainder;
-                }
-
-                return result.HasValue;
-            }
-            
             while (!remainder.IsAtEnd)
             {
-                var expectation = GetExpectation(state);
-
-                switch (expectation)
+                var parserToTry = GetParserToTry(state);
+                var parseResult = parserToTry(remainder);
+                if (parseResult.HasValue)
                 {
-                    case TokenExpectation.KeyOrCommentOrBlank:
-                        
-                        if (TryParser(CommentParser, out var commentResult))
-                        {
-                            yield return commentResult;
-                        }
-                        else if (TryParser(NewLineParser, out var newLineResult))
-                        {
-                            yield return newLineResult;
-                        }
-                        else if (TryParser(KeyParser, out var keyResult))
-                        {
-                            yield return keyResult;
-                        }
-                        else
-                        {
-                            yield return Result.Empty<TokenType>(remainder);
-                        }
-                        break;
-                        
-                    case TokenExpectation.Separator:
-                        if (TryParser(SeparatorParser, out var separatorResult))
-                        {
-                            yield return separatorResult;
-                        }
-                        else
-                        {
-                            yield return Result.Empty<TokenType>(remainder);
-                        }
-                        break;
-                    
-                    case TokenExpectation.Value:
-                        if (TryParser(ValueParser, out var valueResult))
-                        {
-                            yield return valueResult;
-                        }
-                        else
-                        {
-                            yield return Result.Empty<TokenType>(remainder);
-                        }
-                        break;
-
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    remainder = parseResult.Remainder;
+                    yield return parseResult;
                 }
+                else
+                {
+                    yield return Result.Empty<TokenType>(remainder);
+                }
+
             }
         }
 
-        private static TokenExpectation GetExpectation(TokenizationState<TokenType> state)
+        private static TextParser<TokenType> GetParserToTry(TokenizationState<TokenType> state)
         {
             switch (state?.Previous?.Kind)
             {
-                case TokenType.Key:
-                    return TokenExpectation.Separator;
-                    
+                case TokenType.KeyChars:
+                case TokenType.KeyEscapeSequence:
+                case TokenType.KeyPhysicalNewLine:
+                    return KeyOrSeparatorOrNewLineParser;
+                
+                case null:
+                case TokenType.NewLine:
+                case TokenType.Whitespace:
+                case TokenType.Comment:
+                case TokenType.Value:
+                    return KeyOrWhitespaceOrNewLinesOrCommentParser;
+                
                 case TokenType.Separator:
-                    return TokenExpectation.Value;
+                    return ValueOrNewLineParser;
                 
                 default:
-                    return TokenExpectation.KeyOrCommentOrBlank;
+                    throw new ArgumentOutOfRangeException();
             }
         }
     }

@@ -19,6 +19,7 @@
       <EmbeddedResource Include="Resources\key-with-equals-separator.properties" />
       <EmbeddedResource Include="Resources\key-with-logical-newline.properties" />
       <EmbeddedResource Include="Resources\key-with-neither-separator-nor-value.properties" />
+      <EmbeddedResource Include="Resources\key-with-physical-newline.properties" />
       <EmbeddedResource Include="Resources\key-with-space-separator.properties" />
       <EmbeddedResource Include="Resources\whitespace-before-comment.properties" />
       <EmbeddedResource Include="Resources\whitespace-before-key.properties" />

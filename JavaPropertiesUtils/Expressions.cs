@@ -16,9 +16,12 @@ namespace JavaPropertiesUtils
     
     public class Key : IExpression
     {
-        public Key(Token<TokenType> token)
+        public Key(Token<TokenType>[] parts)
         {
-            var tokenStringValue = token.ToStringValue();
+            var tokenStringValue = string.Join(
+                "", 
+                parts.Select(p => p.ToStringValue())
+            );
             
             EscapedName = tokenStringValue;
             Name = tokenStringValue
@@ -133,6 +136,21 @@ namespace JavaPropertiesUtils
     public class NewLine : ITopLevelExpression
     {
         public NewLine(Token<TokenType> token)
+        {
+            Content = token.ToStringValue();
+        }
+
+        public string Content { get; }
+
+        public override string ToString()
+        {
+            return Content;
+        }
+    }
+
+    public class WhiteSpace : ITopLevelExpression
+    {
+        public WhiteSpace(Token<TokenType> token)
         {
             Content = token.ToStringValue();
         }

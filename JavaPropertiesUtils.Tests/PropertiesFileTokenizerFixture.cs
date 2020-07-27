@@ -10,7 +10,6 @@ namespace JavaPropertiesUtils.Tests
     {
         private void RunTest(string inputResourceName, Action<TokenList<TokenType>> assertions)
         {
-            
             var input = ResourceUtils.ReadEmbeddedResource(inputResourceName);
             var tokenizer = new PropertiesFileTokenizer();
             var tokens = tokenizer.Tokenize(input);
@@ -59,6 +58,18 @@ namespace JavaPropertiesUtils.Tests
         }
         
         [Test]
+        public void CanParseWhitespaceBeforeAKey()
+        {
+            RunTest(
+                "whitespace-before-key.properties",
+                (TokenType.Whitespace, "   "),
+                (TokenType.KeyChars, "key"),
+                (TokenType.Separator, "="),
+                (TokenType.Value, "value")
+            );
+        }
+        
+        [Test]
         public void CanParseEmptyFile()
         {
             RunTest(
@@ -81,7 +92,7 @@ namespace JavaPropertiesUtils.Tests
         {
             RunTest(
                 "single-line.properties",
-                (TokenType.Key, "key"),
+                (TokenType.KeyChars, "key"),
                 (TokenType.Separator, "="),
                 (TokenType.Value, "value")
             );
@@ -95,7 +106,7 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Comment, "# Test file"),
                 (TokenType.NewLine, "\r\n"),
 
-                (TokenType.Key, "KEY1"),
+                (TokenType.KeyChars, "KEY1"),
                 (TokenType.Separator, " = "),
                 (TokenType.Value, "value1"),
                 (TokenType.NewLine, "\r\n"),
@@ -105,22 +116,31 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Comment, "! Another comment"),
                 (TokenType.NewLine, "\r\n"),
 
-                (TokenType.Key, "key.2"),
+                (TokenType.Whitespace, "   "),
+                (TokenType.KeyChars, "key.2"),
                 (TokenType.Separator, ": "),
                 (TokenType.Value, "another value "),
                 (TokenType.NewLine, "\r\n"),
 
-                (TokenType.Key, "key\\ 3"),
+                (TokenType.KeyChars, "key"),
+                (TokenType.KeyEscapeSequence, "\\ "),
+                (TokenType.KeyChars, "3"),
                 (TokenType.Separator, " : "),
                 (TokenType.Value, "third value"),
                 (TokenType.NewLine, "\r\n"),
 
-                (TokenType.Key, "key\\=4"),
+                (TokenType.KeyChars, "key"),
+                (TokenType.KeyEscapeSequence, "\\="),
+                (TokenType.KeyChars, "4"),
                 (TokenType.Separator, "=     "),
                 (TokenType.Value, "fourth value"),
                 (TokenType.NewLine, "\r\n"),
                 
-                (TokenType.Key, "key\\\\\\ \\:\\="),
+                (TokenType.KeyChars, "key"),
+                (TokenType.KeyEscapeSequence, "\\\\"),
+                (TokenType.KeyEscapeSequence, "\\ "),
+                (TokenType.KeyEscapeSequence, "\\:"),
+                (TokenType.KeyEscapeSequence, "\\="),
                 (TokenType.Separator, "="),
                 (TokenType.Value, "fifth value"),
                 (TokenType.NewLine, "\r\n")
@@ -132,7 +152,7 @@ namespace JavaPropertiesUtils.Tests
         {
             RunTest(
                 "key-with-neither-separator-nor-value.properties",
-                (TokenType.Key, "key")
+                (TokenType.KeyChars, "key")
             );
         }
 
@@ -141,7 +161,7 @@ namespace JavaPropertiesUtils.Tests
         {
             RunTest(
                 "key-with-colon-separator.properties",
-                (TokenType.Key, "key"),
+                (TokenType.KeyChars, "key"),
                 (TokenType.Separator, ":"),
                 (TokenType.Value, "value")
             );
@@ -152,7 +172,7 @@ namespace JavaPropertiesUtils.Tests
         {
             RunTest(
                 "key-with-space-separator.properties",
-                (TokenType.Key, "key"),
+                (TokenType.KeyChars, "key"),
                 (TokenType.Separator, " "),
                 (TokenType.Value, "value")
             );
@@ -163,20 +183,33 @@ namespace JavaPropertiesUtils.Tests
         {
             RunTest(
                 "key-with-equals-separator.properties",
-                (TokenType.Key, "key"),
+                (TokenType.KeyChars, "key"),
                 (TokenType.Separator, "="),
                 (TokenType.Value, "value")
             );
         }
-
+        
         [Test]
-        public void CanParseAKeyWithANewline()
+        public void CanParseAKeyWithALogicalNewline()
         {
             RunTest(
                 "key-with-logical-newline.properties",
                 (TokenType.KeyChars, "key"),
-                (TokenType.EscapeSequence, "\n"),
+                (TokenType.KeyEscapeSequence, "\\n"),
                 (TokenType.KeyChars, "1"),
+                (TokenType.Separator, ":"),
+                (TokenType.Value, "value")
+            );
+        }
+        
+        [Test]
+        public void CanParseAKeyWithAPhysicalNewline()
+        {
+            RunTest(
+                "key-with-physical-newline.properties",
+                (TokenType.KeyChars, "ke"),
+                (TokenType.KeyPhysicalNewLine, "\\\r\n"),
+                (TokenType.KeyChars, "y"),
                 (TokenType.Separator, ":"),
                 (TokenType.Value, "value")
             );
