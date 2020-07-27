@@ -49,6 +49,16 @@ namespace JavaPropertiesUtils.Tests
         }
         
         [Test]
+        public void CanParseWhitespaceBeforeAComment()
+        {
+            RunTest(
+                "whitespace-before-comment.properties",
+                (TokenType.Whitespace, "   "),
+                (TokenType.Comment, "# This comment has leading whitespace")
+            );
+        }
+        
+        [Test]
         public void CanParseEmptyFile()
         {
             RunTest(
@@ -114,6 +124,61 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Separator, "="),
                 (TokenType.Value, "fifth value"),
                 (TokenType.NewLine, "\r\n")
+            );
+        }
+        
+        [Test]
+        public void CanParseAKeyWithNeitherSeparatorNorValue()
+        {
+            RunTest(
+                "key-with-neither-separator-nor-value.properties",
+                (TokenType.Key, "key")
+            );
+        }
+
+        [Test]
+        public void CanParseAPairWithAColonSeparator()
+        {
+            RunTest(
+                "key-with-colon-separator.properties",
+                (TokenType.Key, "key"),
+                (TokenType.Separator, ":"),
+                (TokenType.Value, "value")
+            );
+        }
+
+        [Test]
+        public void CanParseAPairWithASpaceSeparator()
+        {
+            RunTest(
+                "key-with-space-separator.properties",
+                (TokenType.Key, "key"),
+                (TokenType.Separator, " "),
+                (TokenType.Value, "value")
+            );
+        }
+
+        [Test]
+        public void CanParseAPairWithAnEqualsSeparator()
+        {
+            RunTest(
+                "key-with-equals-separator.properties",
+                (TokenType.Key, "key"),
+                (TokenType.Separator, "="),
+                (TokenType.Value, "value")
+            );
+        }
+
+        [Test]
+        public void CanParseAKeyWithANewline()
+        {
+            RunTest(
+                "key-with-logical-newline.properties",
+                (TokenType.KeyChars, "key"),
+                (TokenType.EscapeSequence, "\n"),
+                (TokenType.KeyChars, "1"),
+                (TokenType.Separator, ":"),
+                (TokenType.Value, "value")
             );
         }
     }
