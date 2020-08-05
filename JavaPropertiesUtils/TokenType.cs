@@ -3,12 +3,11 @@
     public enum TokenType
     {
         Comment = 1,
-        NewLine = 2,
-        KeyChars = 3,
-        KeyEscapeSequence = 4,
-        Separator = 5,
-        Value = 6,
-        Whitespace = 7,
-        KeyPhysicalNewLine = 8
+        KeyChars = 2,
+        KeyEscapeSequence = 3,
+        Separator = 4,
+        Value = 5,
+        Whitespace = 6,
+        KeyPhysicalNewLine = 7
     }
 }

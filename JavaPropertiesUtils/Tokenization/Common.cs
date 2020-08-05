@@ -12,5 +12,8 @@ namespace JavaPropertiesUtils.Tokenization
         public static readonly TextParser<TextSpan> NewLineParser = Span
             .EqualTo("\n")
             .Or(Span.EqualTo("\r\n"));
+
+        public static readonly TextParser<char> WhitespaceCharacterParser = Character
+            .In(' ', '\t');
     }
 }

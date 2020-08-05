@@ -1,5 +1,6 @@
 ﻿using System;
 using Assent;
+using JavaPropertiesUtils.Tests.Utils;
 using NUnit.Framework;
 
 namespace JavaPropertiesUtils.Tests
@@ -7,7 +8,7 @@ namespace JavaPropertiesUtils.Tests
     public class EndToEndFixture
     {
         [Test]
-        public void Test()
+        public void CanReplaceValuesWhilePreservingFormatting()
         {
             var input = ResourceUtils.ReadEmbeddedResource("multiple-pairs-and-comments.properties");
             var parsed = Parser.Parse(input)
@@ -16,7 +17,7 @@ namespace JavaPropertiesUtils.Tests
                 .Set("Non existent key", "Should not be found.");
 
             var actual = parsed.ToString();
-            this.Assent(actual);
+            this.Assent(actual, TestEnvironment.AssentConfiguration);
         }
     }
 }

@@ -9,6 +9,5 @@ namespace JavaPropertiesUtils.Tokenization
             from delimiter in Character.In('!', '#')
             from text in Common.UntilNewLineParser
             select TokenType.Comment;
-
     }
 }

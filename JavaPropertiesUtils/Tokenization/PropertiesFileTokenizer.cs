@@ -2,27 +2,34 @@
 using System.Collections.Generic;
 using Superpower;
 using Superpower.Model;
-using JavaPropertiesUtils.Tokenization;
 
-namespace JavaPropertiesUtils
+namespace JavaPropertiesUtils.Tokenization
 {
     public class PropertiesFileTokenizer : Tokenizer<TokenType>
     {
         // TODO: handle multiline values
-        // TODO: handle leading whitespace
-        // TODO: handle whitespace (but not empty) lines
 
-        private static readonly TextParser<TokenType> KeyOrWhitespaceOrNewLinesOrCommentParser = Comments.Parser
+        private static readonly TextParser<TokenType> StartOfFileParser = Comments.Parser
             .Or(Whitespace.Parser)
             .Or(NewLines.Parser)
             .Or(Keys.Parser);
 
-        private static readonly TextParser<TokenType> KeyOrSeparatorOrNewLineParser = Keys.Parser
+        private static readonly TextParser<TokenType> AfterWhitespaceParser = Comments.Parser
+            .Or(Keys.Parser);
+
+        private static readonly TextParser<TokenType> AfterKeyComponentParser = Keys.Parser
             .Or(Separators.Parser)
             .Or(NewLines.Parser);
 
-        private static readonly TextParser<TokenType> ValueOrNewLineParser = Values.Parser
+        private static readonly TextParser<TokenType> AfterSeparatorParser = Values.Parser
             .Or(NewLines.Parser);
+
+        private static readonly TextParser<TokenType> AfterValueComponentParser = Comments.Parser
+            .Or(Whitespace.Parser)
+            .Or(NewLines.Parser)
+            .Or(Keys.Parser);
+
+        private static readonly TextParser<TokenType> AfterCommentParser = Whitespace.Parser;
 
         protected override IEnumerable<Result<TokenType>> Tokenize(TextSpan remainder, TokenizationState<TokenType> state)
         {
@@ -43,7 +50,6 @@ namespace JavaPropertiesUtils
                 {
                     yield return Result.Empty<TokenType>(remainder);
                 }
-
             }
         }
 
@@ -51,20 +57,25 @@ namespace JavaPropertiesUtils
         {
             switch (state?.Previous?.Kind)
             {
+                case null:
+                    return StartOfFileParser;
+                
                 case TokenType.KeyChars:
                 case TokenType.KeyEscapeSequence:
                 case TokenType.KeyPhysicalNewLine:
-                    return KeyOrSeparatorOrNewLineParser;
-                
-                case null:
-                case TokenType.NewLine:
-                case TokenType.Whitespace:
-                case TokenType.Comment:
-                case TokenType.Value:
-                    return KeyOrWhitespaceOrNewLinesOrCommentParser;
+                    return AfterKeyComponentParser;
                 
                 case TokenType.Separator:
-                    return ValueOrNewLineParser;
+                    return AfterSeparatorParser;
+                
+                case TokenType.Value:
+                    return AfterValueComponentParser;
+                
+                case TokenType.Comment:
+                    return AfterCommentParser;
+                
+                case TokenType.Whitespace:
+                    return AfterWhitespaceParser;
                 
                 default:
                     throw new ArgumentOutOfRangeException();

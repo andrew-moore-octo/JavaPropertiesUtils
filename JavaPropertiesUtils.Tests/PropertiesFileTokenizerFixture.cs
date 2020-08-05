@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using FluentAssertions;
+using JavaPropertiesUtils.Tokenization;
 using NUnit.Framework;
 using Superpower.Model;
 
@@ -16,7 +17,7 @@ namespace JavaPropertiesUtils.Tests
 
             assertions(tokens);
         }
-        
+
         private void RunTest(string inputResourceName, params (TokenType TokenType, string TokenText)[] expected)
         {
             var expectations = expected
@@ -28,7 +29,7 @@ namespace JavaPropertiesUtils.Tests
 
             RunTest(inputResourceName, tokens => tokens.Should().SatisfyRespectively(expectations));
         }
-        
+
         [Test]
         public void CanParseExclamationComment()
         {
@@ -37,7 +38,7 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Comment, "! This is a comment")
             );
         }
-        
+
         [Test]
         public void CanParseHashComment()
         {
@@ -46,7 +47,7 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Comment, "# This is a comment")
             );
         }
-        
+
         [Test]
         public void CanParseWhitespaceBeforeAComment()
         {
@@ -56,7 +57,7 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Comment, "# This comment has leading whitespace")
             );
         }
-        
+
         [Test]
         public void CanParseWhitespaceBeforeAKey()
         {
@@ -68,7 +69,7 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Value, "value")
             );
         }
-        
+
         [Test]
         public void CanParseEmptyFile()
         {
@@ -77,16 +78,16 @@ namespace JavaPropertiesUtils.Tests
                 tokens => tokens.Should().BeEmpty()
             );
         }
-        
+
         [Test]
         public void CanParseBlankLine()
         {
             RunTest(
                 "blank-line.properties",
-                (TokenType.NewLine, "\r\n")
+                (TokenType.Whitespace, "\r\n")
             );
         }
-        
+
         [Test]
         public void CanParseSingleLineFile()
         {
@@ -97,44 +98,41 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Value, "value")
             );
         }
-        
+
         [Test]
         public void CanParseFileWithMultipleLinesAndComments()
         {
             RunTest(
                 "multiple-pairs-and-comments.properties",
                 (TokenType.Comment, "# Test file"),
-                (TokenType.NewLine, "\r\n"),
+                (TokenType.Whitespace, "\r\n"),
 
                 (TokenType.KeyChars, "KEY1"),
                 (TokenType.Separator, " = "),
                 (TokenType.Value, "value1"),
-                (TokenType.NewLine, "\r\n"),
-
-                (TokenType.NewLine, "\r\n"),
+                (TokenType.Whitespace, "\r\n\r\n"),
 
                 (TokenType.Comment, "! Another comment"),
-                (TokenType.NewLine, "\r\n"),
+                (TokenType.Whitespace, "\r\n   "),
 
-                (TokenType.Whitespace, "   "),
                 (TokenType.KeyChars, "key.2"),
                 (TokenType.Separator, ": "),
                 (TokenType.Value, "another value "),
-                (TokenType.NewLine, "\r\n"),
+                (TokenType.Whitespace, "\r\n"),
 
                 (TokenType.KeyChars, "key"),
                 (TokenType.KeyEscapeSequence, "\\ "),
                 (TokenType.KeyChars, "3"),
                 (TokenType.Separator, " : "),
                 (TokenType.Value, "third value"),
-                (TokenType.NewLine, "\r\n"),
+                (TokenType.Whitespace, "\r\n"),
 
                 (TokenType.KeyChars, "key"),
                 (TokenType.KeyEscapeSequence, "\\="),
                 (TokenType.KeyChars, "4"),
                 (TokenType.Separator, "=     "),
                 (TokenType.Value, "fourth value"),
-                (TokenType.NewLine, "\r\n"),
+                (TokenType.Whitespace, "\r\n"),
                 
                 (TokenType.KeyChars, "key"),
                 (TokenType.KeyEscapeSequence, "\\\\"),
@@ -143,10 +141,10 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.KeyEscapeSequence, "\\="),
                 (TokenType.Separator, "="),
                 (TokenType.Value, "fifth value"),
-                (TokenType.NewLine, "\r\n")
+                (TokenType.Whitespace, "\r\n")
             );
         }
-        
+
         [Test]
         public void CanParseAKeyWithNeitherSeparatorNorValue()
         {
@@ -188,7 +186,7 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Value, "value")
             );
         }
-        
+
         [Test]
         public void CanParseAKeyWithALogicalNewline()
         {
@@ -201,7 +199,7 @@ namespace JavaPropertiesUtils.Tests
                 (TokenType.Value, "value")
             );
         }
-        
+
         [Test]
         public void CanParseAKeyWithAPhysicalNewline()
         {
@@ -209,6 +207,19 @@ namespace JavaPropertiesUtils.Tests
                 "key-with-physical-newline.properties",
                 (TokenType.KeyChars, "ke"),
                 (TokenType.KeyPhysicalNewLine, "\\\r\n"),
+                (TokenType.KeyChars, "y"),
+                (TokenType.Separator, ":"),
+                (TokenType.Value, "value")
+            );
+        }
+
+        [Test]
+        public void CanParseAKeyWithAPhysicalNewlineAndIndentation()
+        {
+            RunTest(
+                "key-with-physical-newline-and-indentation.properties",
+                (TokenType.KeyChars, "ke"),
+                (TokenType.KeyPhysicalNewLine, "\\\r\n   "),
                 (TokenType.KeyChars, "y"),
                 (TokenType.Separator, ":"),
                 (TokenType.Value, "value")

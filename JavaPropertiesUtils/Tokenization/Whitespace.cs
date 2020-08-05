@@ -5,8 +5,8 @@ namespace JavaPropertiesUtils.Tokenization
 {
     public static class Whitespace
     {
-        public static readonly TextParser<TokenType> Parser = Span
-            .WithAll(c => c == ' ' || c == '\t')
+        public static readonly TextParser<TokenType> Parser = Character.In(' ', '\t', '\r', '\n')
+            .AtLeastOnce()
             .Value(TokenType.Whitespace);
     }
 }

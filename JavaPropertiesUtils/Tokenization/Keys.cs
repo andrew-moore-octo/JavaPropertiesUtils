@@ -16,7 +16,8 @@ namespace JavaPropertiesUtils.Tokenization
 
         private static readonly TextParser<TokenType> PhysicalNewLineParser =
             from slash in Character.EqualTo('\\')
-            from newline in NewLines.Parser
+            from newline in Common.NewLineParser
+            from indentation in Common.WhitespaceCharacterParser.Many()
             select TokenType.KeyPhysicalNewLine;
 
         public static readonly TextParser<TokenType> Parser = KeyCharParser

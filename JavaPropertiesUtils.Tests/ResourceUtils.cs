@@ -17,9 +17,12 @@ namespace JavaPropertiesUtils.Tests
             {
                 const int numSuggestionsToShow = 3;
                 
+                var lev = new Fastenshtein.Levenshtein(name);
+                
                 var numResources = assembly.GetManifestResourceNames().Length;
                 var validResourceNames = assembly.GetManifestResourceNames()
                     .Select(resName => resName.Substring(prefix.Length))
+                    .OrderBy(lev.DistanceFrom)
                     .Take(numSuggestionsToShow)
                     .ToArray();
 

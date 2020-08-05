@@ -1,4 +1,7 @@
 ﻿using System;
+using JavaPropertiesUtils.Expressions;
+using JavaPropertiesUtils.Parsing;
+using JavaPropertiesUtils.Tokenization;
 
 namespace JavaPropertiesUtils
 {
